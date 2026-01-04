@@ -286,14 +286,6 @@ bool check(const vector<int>& v, int len){
 
 
 
-
-
-
-
-
-
-
-
 unordered_map<int, vector<int>> cS;
 unordered_map<int, vector<int>> cP;
 unordered_map<int, vector<int>> cT;
@@ -673,7 +665,7 @@ int main(){
             }
         
 
-            if (!res1){  //не знаю, как по-другому сделать случайное слово не из языка
+            if (!res1){
                 if (res2){
                     is_error = 1;
                     error_word = s;
