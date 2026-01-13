@@ -6,6 +6,7 @@
 #include <chrono>
 #include <cmath>
 #include <algorithm>
+#include <set>
 
 using namespace std;
 
@@ -286,22 +287,22 @@ bool check(const vector<int>& v, int len){
 
 
 
-unordered_map<int, vector<int>> cS;
-unordered_map<int, vector<int>> cP;
-unordered_map<int, vector<int>> cT;
-unordered_map<int, vector<int>> cQ;
+unordered_map<int, set<int>> cS;
+unordered_map<int, set<int>> cP;
+unordered_map<int, set<int>> cT;
+unordered_map<int, set<int>> cQ;
 
 //i - improved
-vector<int> iS(int pos, const string& s);
-vector<int> iP(int pos, const string& s);
-vector<int> iT(int pos, const string& s);
-vector<int> iQ(int pos, const string& s);
+set<int> iS(int pos, const string& s);
+set<int> iP(int pos, const string& s);
+set<int> iT(int pos, const string& s);
+set<int> iQ(int pos, const string& s);
 
 //основная идея - после обработки каждого нетерминала
 //возвращать список позиций в строке, где корректно мог закончиться нетерминал
 
 //S -> aaaP | aaa | TSTP | TST
-vector<int> iS(int pos, const string& s){
+set<int> iS(int pos, const string& s){
     int copy_pos = pos;  //заведем copy_pos, потому что pos может потеряться (когда будут вложенные циклы, например)
     auto it = cS.find(copy_pos);
     if (it != cS.end()) {
@@ -315,17 +316,17 @@ vector<int> iS(int pos, const string& s){
     if (s[pos] == 'a' && s[pos + 1] == 'a' && s[pos + 2] == 'a'){
         pos += 3;
         int prev_pos = pos;
-        vector<int> all_pos;
-        all_pos.push_back(prev_pos); //так как есть правило S -> aaa
-        vector<int> all_pos1 = iP(pos, s); 
-        all_pos.insert(all_pos.end(), all_pos1.begin(), all_pos1.end());
+        set<int> all_pos;
+        all_pos.insert(prev_pos); //так как есть правило S -> aaa
+        set<int> all_pos1 = iP(pos, s); 
+        all_pos.insert(all_pos1.begin(), all_pos1.end());
         cS[copy_pos] = all_pos;
         return all_pos;
 
     }else{
         int copy_pos1 = pos;  //для подсчёта букв "a"
-        vector<int> all_pos = {};
-        vector<int> all_pos1 = iT(pos, s);
+        set<int> all_pos = {};
+        set<int> all_pos1 = iT(pos, s);
         cS[copy_pos] = {};
 
         if (all_pos1.empty()){
@@ -337,7 +338,7 @@ vector<int> iS(int pos, const string& s){
             int count1_a = count(substring.begin(), substring.end(), 'a');
             pos = i;
             
-            vector<int> all_pos2 = iS(pos, s);
+            set<int> all_pos2 = iS(pos, s);
 
             if (all_pos2.empty()){
                 continue;
@@ -347,13 +348,13 @@ vector<int> iS(int pos, const string& s){
                 int copy_pos2 = i; //для подсчёта букв "a"
 
                 pos = i;
-                vector<int> all_pos3 = iT(pos, s);
+                set<int> all_pos3 = iT(pos, s);
 
                 if (all_pos3.empty()){
                     continue;;
                 }
 
-                all_pos.insert(all_pos.end(), all_pos3.begin(), all_pos3.end()); //так как есть правило S->TST
+                all_pos.insert(all_pos3.begin(), all_pos3.end()); //так как есть правило S->TST
                 for (int i: all_pos3){
                     string substring = s.substr(copy_pos2, i - copy_pos2);
                     int count2_a = count(substring.begin(), substring.end(), 'a');
@@ -363,10 +364,10 @@ vector<int> iS(int pos, const string& s){
                     }
 
                     pos = i;
-                    vector<int> all_pos4 = {};
+                    set<int> all_pos4 = {};
                     if (s[pos] != '$'){
                         all_pos4 = iP(pos, s);
-                        all_pos.insert(all_pos.end(), all_pos4.begin(), all_pos4.end());
+                        all_pos.insert(all_pos4.begin(), all_pos4.end());
                     }
                 }
             }
@@ -377,7 +378,7 @@ vector<int> iS(int pos, const string& s){
 }
 
 // P -> bSP | bS
-vector<int> iP(int pos, const string& s){
+set<int> iP(int pos, const string& s){
     int copy_pos = pos;
     auto it = cP.find(copy_pos);
     if (it != cP.end()) {
@@ -397,19 +398,19 @@ vector<int> iP(int pos, const string& s){
         if (s[pos] == '$'){
             return {};
         }
-        vector<int> all_pos = {};
-        vector<int> all_pos1 = iS(pos, s);
+        set<int> all_pos = {};
+        set<int> all_pos1 = iS(pos, s);
         if (all_pos1.empty()){
             return {};
         }
 
-        all_pos.insert(all_pos.end(), all_pos1.begin(), all_pos1.end()); //так как есть правило P -> bS
+        all_pos.insert(all_pos1.begin(), all_pos1.end()); //так как есть правило P -> bS
         for (int i: all_pos1){
             pos = i;
-            vector<int> all_pos2 = {};
+            set<int> all_pos2 = {};
             if (s[pos] != '$'){
                 all_pos2 = iP(pos, s);
-                all_pos.insert(all_pos.end(), all_pos2.begin(), all_pos2.end());
+                all_pos.insert(all_pos2.begin(), all_pos2.end());
             }
         }
         cP[copy_pos] = all_pos;
@@ -418,7 +419,7 @@ vector<int> iP(int pos, const string& s){
 }
 
 // T -> bbT2 | bb
-vector<int> iT(int pos, const string& s){
+set<int> iT(int pos, const string& s){
     int copy_pos = pos;
     auto it = cT.find(copy_pos);
     if (it != cT.end()) {
@@ -435,14 +436,14 @@ vector<int> iT(int pos, const string& s){
         return {};
     }else{
         pos += 2;
-        vector<int> all_pos;
-        all_pos.push_back(pos);
+        set<int> all_pos;
+        all_pos.insert(pos);
 
         if (s[pos] == '$'){
             return all_pos;
         }
-        vector<int> all_pos1 = iQ(pos, s);
-        all_pos.insert(all_pos.end(), all_pos1.begin(), all_pos1.end());
+        set<int> all_pos1 = iQ(pos, s);
+        all_pos.insert(all_pos1.begin(), all_pos1.end());
         cT[copy_pos] = all_pos;
         return all_pos;
     }
@@ -451,7 +452,7 @@ vector<int> iT(int pos, const string& s){
 
 
 // Q -> aTQ | aT
-vector<int> iQ(int pos, const string& s){
+set<int> iQ(int pos, const string& s){
     int copy_pos = pos;
     auto it = cQ.find(copy_pos);
     if (it != cQ.end()) {
@@ -471,23 +472,32 @@ vector<int> iQ(int pos, const string& s){
         if (s[pos] == '$'){
             return {};
         }
-        vector<int> all_pos;
-        vector<int> all_pos1 = iT(pos, s);
+        set<int> all_pos;
+        set<int> all_pos1 = iT(pos, s);
         if (all_pos1.empty()){
             return {};
         }
 
-        all_pos.insert(all_pos.end(), all_pos1.begin(), all_pos1.end()); //так как есть правило Q -> aT
+        all_pos.insert(all_pos1.begin(), all_pos1.end()); //так как есть правило Q -> aT
         for (int i: all_pos1){
-            vector<int> all_pos2 = {};
+            set<int> all_pos2 = {};
             if (s[pos] != '$'){
                 all_pos2 = iQ(pos, s);
-                all_pos.insert(all_pos.end(), all_pos2.begin(), all_pos2.end());
+                all_pos.insert(all_pos2.begin(), all_pos2.end());
             }
         }
         cQ[copy_pos] = all_pos;
         return all_pos;
     }
+}
+
+bool check2(const set<int>& v, int len){
+    for (int p: v){
+        if (p == len - 1){
+            return true;
+        }
+    }
+    return false;
 }
 
 
@@ -526,7 +536,7 @@ int main(){
 
         double time2;
         auto start2 = std::chrono::high_resolution_clock::now();
-        int res2 = check(iS(0, s), len);
+        int res2 = check2(iS(0, s), len);
         auto end2 = std::chrono::high_resolution_clock::now();
         chrono::duration<double> duration2 = end2 - start2;
         time2 = duration2.count();
@@ -605,7 +615,7 @@ int main(){
             s = get_random_string(j);
             s += "$";
             int len = s.size();
-            if (check(iS(0, s), len)){
+            if (check2(iS(0, s), len)){
                 continue;
             }
             cS.clear();
@@ -623,7 +633,7 @@ int main(){
 
             double time2;
             auto start2 = std::chrono::high_resolution_clock::now();
-            int res2 = check(iS(0, s), len);
+            int res2 = check2(iS(0, s), len);
             auto end2 = std::chrono::high_resolution_clock::now();
             chrono::duration<double> duration2 = end2 - start2;
             time2 = duration2.count();
